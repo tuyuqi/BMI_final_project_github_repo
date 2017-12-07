@@ -16,11 +16,14 @@ library(dplyr)
 data = read_excel("GHProject_Dataset.xlsx") %>%
   janitor::clean_names()
 
+data = data[!duplicated(data$patientid),]
+
 #tidying: collapsing, setting indicator variables, 
 
 
 #visualize dataset for each variables
 attach(data)
+par(mfrow=c(3,3))
 hist(loshours)
 hist(losdays2)
 hist(mews)
