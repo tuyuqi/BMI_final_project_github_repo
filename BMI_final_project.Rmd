@@ -8,12 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
+library(dplyr)
 ```
 
 ```{r}
 #load in data
 data = read_excel("GHProject_Dataset.xlsx") %>%
-  clean_names
+  janitor::clean_names()
 
 #tidying: collapsing, setting indicator variables, 
 
