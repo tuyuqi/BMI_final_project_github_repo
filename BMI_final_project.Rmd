@@ -33,5 +33,7 @@ hist(respirationrate)
 #try transformations of data
 
 
+#look for outliers - max/min temperature, heart rate, etc.
+
 ```
 
