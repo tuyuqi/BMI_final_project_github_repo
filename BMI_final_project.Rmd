@@ -11,7 +11,27 @@ library(readxl)
 ```
 
 ```{r}
-data = read_excel("GHProject_Dataset.xlsx") 
+#load in data
+data = read_excel("GHProject_Dataset.xlsx") %>%
+  clean_names
+
+#tidying: collapsing, setting indicator variables, 
+
+
+#visualize dataset for each variables
+attach(data)
+hist(loshours)
+hist(losdays2)
+hist(mews)
+hist(cindex)
+hist(ageyear)
+hist(bmi)
+hist(temperature)
+hist(heartrate)
+hist(respirationrate)
+
+#try transformations of data
+
 
 ```
 
