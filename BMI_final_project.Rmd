@@ -12,7 +12,7 @@ library(dplyr)
 ```
 
 ```{r}
-#load in data
+#####load in data
 data = read_excel("GHProject_Dataset.xlsx") %>%
   janitor::clean_names() %>% 
   tidyr::separate(admitdtm, into = c("weekday", "admitdate"), sep = "day, ") %>%
@@ -22,72 +22,64 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
   mutate(date = paste(stringr::str_sub(dateyear,-4,-1),"/",month1,"/",stringr::str_sub(dateyear,1,2),sep = "")) %>% 
   select(-month, -dateyear, -weekday, -month1) %>% 
   select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
+#arrange the data according to the time of admission
 data = data[order(data$date),]
-#remove the more than one visits
+#remove those more than one visits
 data = data[!duplicated(data$patientid),]
-
-#descriptive statistics of each variable
-
-#continuous variable
-#Outcome: losdays2 -- length of stay in the hospital (days)
-sum1 <- summary(data$losdays2,digits = 3)
-#Evisit
-sum2 <- summary(data$evisit,digits = 3)
-#AgeYear: patient’s age in years
-sum3 <- summary(data$ageyear,digits = 3)
-#bmi
-sum4 <- summary(data$bmi,digits = 3)
-#bpsystolic
-sum5 <- summary(data$bpsystolic,digits = 3)
-#o2sat
-sum6 <- summary(data$o2sat,digits = 3)
-#temperature
-sum7 <- summary(data$temperature, digits = 3)
-#heartrate
-sum8 <- summary(data$temperature, digits = 3)
-#respirationrate
-sum9 <- summary(data$respirationrate, digits = 3)
-#bpdiastolic
-sum10 <- summary(data$bpdiastolic, digits = 3)
-
-
-knitr::kable(dplyr::bind_rows(
-  c(variable = "totalcost",sum1),
-  c(variable = "age",sum2),
-  c(variable = "interventions", sum3),
-  c(variable = "drugs",sum4),
-  c(variable = "ERvisits", sum5),
-  c(variable = "complications", sum6),
-  c(variable = "comorbidities", sum7),
-  c(variable = "duration", sum8),
-  c(variable = "duration", sum9),
-  c(variable = "duration", sum10)
-))
-
-#categorical variable
-
-#Ls30DayReadmit -- 1=admission into the hospital within past 30 days; 0=otherwise.
-
-#MEWS: The Modified Early Warning Score (MEWS) determines the degree of illness of a patient based on respiratory rate, oxygen saturation, temperature, blood pressure, heart rate, AVPU response;
-#0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
-
-#Cindex -- Charlson comorbidity index (CCI) ranks patients based on severity of comorbidity: 0=normal, 1-2=mild, 3-4=moderate and >5=severe
-
-#ICU_Flag: 1=if during hospitalization, the patient had a visit in the intensive care unit (ICU); 0=otherwise. 
-
-#gender: patient’s gender
-
-#race: patient’s race
-
-#religion: patient’s religion
-
-#MaritalStatus: patient’s marital status
-
-#InsuranceType: patient’s insurance
-
-#respiration rate, blood pressure diastolic (BPD), oxygen saturation (O2), blood pressure diastolic (BPS), temperature, heart rate, and body mass index (BMI).
+data = data %>% 
+#filter out the data with admission within 30 days and stay longer than 30 days
+  filter(!(is30dayreadmit == 1 & losdays2 > 30)) 
 
 #tidying: collapsing, setting indicator variables, 
+#####descriptive statistics of each variable
+##continuous variable
+sum1 <- summary(data$losdays2,digits = 3)
+sum2 <- summary(data$evisit,digits = 3)
+sum3 <- summary(data$ageyear,digits = 3)
+sum4 <- summary(data$bmi,digits = 3)
+sum5 <- summary(data$bpsystolic,digits = 3)
+sum6 <- summary(data$o2sat,digits = 3)
+sum7 <- summary(data$temperature, digits = 3)
+sum8 <- summary(data$heartrate, digits = 3)
+sum9 <- summary(data$respirationrate, digits = 3)
+sum10 <- summary(data$bpdiastolic, digits = 3)
+
+knitr::kable(dplyr::bind_rows(
+  c(variable = "Losdays2",sum1),
+  c(variable = "Evisit",sum2),
+  c(variable = "AgeYear", sum3),
+  c(variable = "bmi",sum4),
+  c(variable = "bpsystolic", sum5),
+  c(variable = "o2sat", sum6),
+  c(variable = "temperature", sum7),
+  c(variable = "heartrate", sum8),
+  c(variable = "respirationrate", sum9),
+  c(variable = "bpdiastolic", sum10)
+))
+
+#findings: there are many NA's in bmi. If we are to contain this variable, we should
+#seriously consider it
+
+##categorical variable
+#Ls30DayReadmit -- 1=admission into the hospital within past 30 days; 0=otherwise.
+table(data$is30dayreadmit)
+#MEWS: The Modified Early Warning Score (MEWS) determines the degree of illness of a patient based on respiratory rate, oxygen saturation, temperature, blood pressure, heart rate, AVPU response;
+#0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
+table(data$mews)
+#Cindex -- Charlson comorbidity index (CCI) ranks patients based on severity of comorbidity: 0=normal, 1-2=mild, 3-4=moderate and >5=severe
+table(data$cindex)
+#ICU_Flag: 1=if during hospitalization, the patient had a visit in the intensive care unit (ICU); 0=otherwise. 
+table(data$icu_flag)
+#gender: patient’s gender
+table(data$gender)
+#race: patient’s race
+table(data$race)
+#religion: patient’s religion
+table(data$religion)
+#MaritalStatus: patient’s marital status
+table(data$maritalstatus)
+#InsuranceType: patient’s insurance
+table(data$insurancetype)
 
 #visualize dataset for each variables
 attach(data)
