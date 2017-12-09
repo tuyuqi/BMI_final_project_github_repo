@@ -51,7 +51,7 @@ knitr::kable(dplyr::bind_rows(
   c(variable = "bpsystolic", sum4),
   c(variable = "o2sat", sum5), # 10 observation below 90, 80 observation above 100, 2% of the data
   c(variable = "temperature", sum6), #3 less than 30 and 2 more than 50
-  c(variable = "heartrate", sum7), 
+  c(variable = "heartrate", sum7), # 2 more than 240 (rare heart rate or caused by disease)
   c(variable = "respirationrate", sum8),
   c(variable = "bpdiastolic", sum9)
 ))
