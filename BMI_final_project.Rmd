@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
 library(dplyr)
+library(olsrr)
 ```
 
 ```{r}
@@ -29,8 +30,6 @@ data = data[order(data$date),]
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
 data = data[!(data$is30dayreadmit == 1 & data$losdays2 > 30),]
-
-#filter out the data with admission within 30 days and stay longer than 30 days
 
 #tidying: collapsing, setting indicator variables, 
 #####descriptive statistics of each variable
@@ -179,5 +178,16 @@ summary(lm(log(losdays2)~bmi_catg,data=data))
 
 ```{r}
 #build the main model
+
+#try automatic procedure
+back<-ols_step_backward(whole_model, prem = 0.2)
+forward<-ols_step_forward(whole_model, prem = 0.2)
+step<-ols_stepwise(whole_model, prem = 0.2)
+
+#criterion procedure
+
+#model diagnostics
+
+#cross validation/bootstrap
 ```
 
