@@ -26,57 +26,72 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
 data = data[order(data$date),]
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
-data = data %>% 
+data = data[!(data$is30dayreadmit == 1 & data$losdays2 > 30),]
 #filter out the data with admission within 30 days and stay longer than 30 days
-  filter(!(is30dayreadmit == 1 & losdays2 > 30)) 
 
 #tidying: collapsing, setting indicator variables, 
 #####descriptive statistics of each variable
 ##continuous variable
-sum1 <- summary(data$losdays2,digits = 3)
-sum2 <- summary(data$evisit,digits = 3)
-sum3 <- summary(data$ageyear,digits = 3)
-sum4 <- summary(data$bmi,digits = 3)
-sum5 <- summary(data$bpsystolic,digits = 3)
-sum6 <- summary(data$o2sat,digits = 3)
-sum7 <- summary(data$temperature, digits = 3)
-sum8 <- summary(data$heartrate, digits = 3)
-sum9 <- summary(data$respirationrate, digits = 3)
-sum10 <- summary(data$bpdiastolic, digits = 3)
+sum1 <- summary(data$losdays2,digits = 3) #transformation get good results
+sum2 <- summary(data$ageyear,digits = 3) 
+sum3 <- summary(data$bmi,digits = 3) #a lot of NA's
+sum4 <- summary(data$bpsystolic,digits = 3)
+sum5 <- summary(data$o2sat,digits = 3)
+sum6 <- summary(data$temperature, digits = 3)
+sum7 <- summary(data$heartrate, digits = 3)
+sum8 <- summary(data$respirationrate, digits = 3)
+sum9 <- summary(data$bpdiastolic, digits = 3)
 
 knitr::kable(dplyr::bind_rows(
-  c(variable = "Losdays2",sum1),
-  c(variable = "Evisit",sum2),
-  c(variable = "AgeYear", sum3),
-  c(variable = "bmi",sum4),
-  c(variable = "bpsystolic", sum5),
-  c(variable = "o2sat", sum6),
-  c(variable = "temperature", sum7),
-  c(variable = "heartrate", sum8),
-  c(variable = "respirationrate", sum9),
-  c(variable = "bpdiastolic", sum10)
+  c(variable = "Losdays2",sum1),#good to do log transform
+  c(variable = "AgeYear", sum2),#quite normal
+  c(variable = "bmi",sum3),#688 missing values and long tail
+  c(variable = "bpsystolic", sum4),
+  c(variable = "o2sat", sum5), # 10 observation below 90, 80 observation above 100, 2% of the data
+  c(variable = "temperature", sum6), #3 less than 30 and 2 more than 50
+  c(variable = "heartrate", sum7), 
+  c(variable = "respirationrate", sum8),
+  c(variable = "bpdiastolic", sum9)
 ))
 
-#findings: there are many NA's in bmi. If we are to contain this variable, we should
-#seriously consider it
-
 ##categorical variable
-#Ls30DayReadmit -- 1=admission into the hospital within past 30 days; 0=otherwise.
-table(data$is30dayreadmit)
-#MEWS: The Modified Early Warning Score (MEWS) determines the degree of illness of a patient based on respiratory rate, oxygen saturation, temperature, blood pressure, heart rate, AVPU response;
+#MEWS: The Modified Early Warning Score (MEWS) 
 #0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
 table(data$mews)
+#make them into 3 category and try to make the data balanced (though not perfect)
+data$mews_catg<-ifelse(data$mews==0|data$mews==1,1,
+                       ifelse(data$mews==2|data$mews==3, 2,3))
+table(data$mews_catg)
+#mews_catg: 1=normal; 2=increase caution; 3 = further deterioration or immediate action required
+
 #Cindex -- Charlson comorbidity index (CCI) ranks patients based on severity of comorbidity: 0=normal, 1-2=mild, 3-4=moderate and >5=severe
 table(data$cindex)
+#make them into three category to balance the data
+data$cindex_catg<-ifelse(data$cindex==0,"normal",
+                         ifelse(data$cindex==1|data$cindex==2,"mild","moderate to severe"))
+table(data$cindex_catg)
+
+#evisit
+table(data$evisit)
+data$evisit_catg<-ifelse(data$evisit==0|data$evisit==1,1,2)
+table(data$evisit_catg)
+#evisit_catg:1=0 or 1 emergency department visit;2=more than once emergency department visit(may indicate the serious sickness)
+
 #ICU_Flag: 1=if during hospitalization, the patient had a visit in the intensive care unit (ICU); 0=otherwise. 
 table(data$icu_flag)
-#gender: patient’s gender
+#gender: patient’s gender -- balanced
 table(data$gender)
-#race: patient’s race
+#race: patient’s race -- quite unbalanced
 table(data$race)
-#religion: patient’s religion
+data$race_catg<-ifelse(data$race=="White","White",
+                ifelse(data$race=="African Amer/Black","African Amer/Black",
+                "Other race"))
+table(data$race_catg)
+#put other race together, might be controversal, but is more balanced
+
+#religion: patient’s religion -- unbalanced
 table(data$religion)
-#MaritalStatus: patient’s marital status
+#MaritalStatus: patient’s marital status-- unbalanced
 table(data$maritalstatus)
 #InsuranceType: patient’s insurance
 table(data$insurancetype)
@@ -84,20 +99,76 @@ table(data$insurancetype)
 #visualize dataset for each variables
 attach(data)
 par(mfrow=c(3,3))
-hist(loshours) #highly skewed to the right
 hist(losdays2) #highly skewed to the right
-hist(mews) 
-hist(cindex)
 hist(ageyear)
 hist(bmi)
+hist(bpsystolic)
+hist(o2sat)
 hist(temperature)
 hist(heartrate)
 hist(respirationrate)
+hist(bpdiastolic)
 
 #try transformations of data
-
-
+par(mfrow=c(1,1))
+hist(log(data$losdays2)) #good to do log transform
 #look for outliers - max/min temperature, heart rate, etc.
 
+```
+
+```{r}
+### try some simple linear regression
+#continuous varialbe
+summary(lm(losdays2~ageyear,data = data))
+summary(lm(losdays2~bmi,data = data))
+summary(lm(losdays2~bpsystolic,data = data))
+summary(lm(losdays2~o2sat,data = data))
+summary(lm(losdays2~temperature,data = data))
+summary(lm(losdays2~heartrate,data = data))
+summary(lm(losdays2~respirationrate,data = data))
+summary(lm(losdays2~bpdiastolic,data = data))
+
+summary(lm(log(losdays2)~ageyear,data = data))
+summary(lm(log(losdays2)~bmi,data = data))
+summary(lm(log(losdays2)~bpsystolic,data = data))
+summary(lm(log(losdays2)~o2sat,data = data))
+summary(lm(log(losdays2)~temperature,data = data))
+summary(lm(log(losdays2)~heartrate,data = data))
+summary(lm(log(losdays2)~respirationrate,data = data))
+summary(lm(log(losdays2)~bpdiastolic,data = data))
+
+
+#categorical varialbe
+summary(lm(losdays2~as.factor(mews_catg),data=data))
+summary(lm(losdays2~as.factor(cindex_catg),data=data))
+summary(lm(losdays2~as.factor(evisit_catg),data=data))
+summary(lm(losdays2~as.factor(icu_flag),data=data))
+summary(lm(losdays2~as.factor(gender),data=data))
+summary(lm(losdays2~as.factor(race_catg),data=data))
+
+summary(lm(log(losdays2)~as.factor(mews_catg),data=data))
+summary(lm(log(losdays2)~as.factor(cindex_catg),data=data))
+summary(lm(log(losdays2)~as.factor(evisit_catg),data=data))
+summary(lm(log(losdays2)~as.factor(icu_flag),data=data))
+summary(lm(log(losdays2)~as.factor(gender),data=data))
+summary(lm(log(losdays2)~as.factor(race_catg),data=data))
+
+###try to make bmi into categorical variable
+#reference: http://apps.who.int/bmi/index.jsp?introPage=intro_3.html
+#<18.5 underweight
+#18.5-24.99 normal
+#25-29.99 pre-obese
+#>30 obese
+data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
+                ifelse(data$bmi<25,"normal",
+                ifelse(data$bmi<30,"pre-obese",
+                       "obese")))
+table(data$bmi_catg)
+summary(lm(log(losdays2)~bmi_catg,data=data))
+###try to separate the data into icu_flag = 0 and icu_flag = 1
+```
+
+```{r}
+#build the main model
 ```
 
