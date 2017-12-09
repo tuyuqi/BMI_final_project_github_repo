@@ -81,9 +81,9 @@ table(data$evisit_catg)
 
 #ICU_Flag: 1=if during hospitalization, the patient had a visit in the intensive care unit (ICU); 0=otherwise. 
 table(data$icu_flag)
-#gender: patient’s gender -- balanced
+#gender: patient???s gender -- balanced
 table(data$gender)
-#race: patient’s race -- quite unbalanced
+#race: patient???s race -- quite unbalanced
 table(data$race)
 data$race_catg<-ifelse(data$race=="White","White",
                 ifelse(data$race=="African Amer/Black","African Amer/Black",
@@ -91,7 +91,7 @@ data$race_catg<-ifelse(data$race=="White","White",
 table(data$race_catg)
 #put other race together, might be controversal, but is more balanced
 
-#religion: patient’s religion -- unbalanced, lets recode some
+#religion: patient???s religion -- unbalanced, lets recode some
 data$religion[data$religion == "Angelican"] <- "Christian"
 data$religion[data$religion == "Non Denominational"] <- "Christian"
 data$religion[data$religion == "Catholic"] <- "Christian"
@@ -101,10 +101,16 @@ data$religion[data$religion == "Mormon"] <- "Other"
 table(data$religion)
 
 
-#MaritalStatus: patient’s marital status-- unbalanced
+#MaritalStatus: patient???s marital status-- unbalanced
 table(data$maritalstatus)
-#InsuranceType: patient’s insurance
+data$marital_catg <- ifelse(data$maritalstatus=="Civial            Union"|data$maritalstatus=="Married"|data$maritalstatus=="Civial Union","Not alone","Alone")
+table(data$marital_catg)
+#InsuranceType: patient???s insurance
 table(data$insurancetype)
+data$insurance_catg <- ifelse(data$insurancetype=="Private","Private","Public")
+table(data$insurance_catg)
+
+
 
 #visualize dataset for each variables
 attach(data)
@@ -122,44 +128,33 @@ hist(bpdiastolic)
 #try transformations of data
 par(mfrow=c(1,1))
 hist(log(data$losdays2)) #good to do log transform
+hist(log(data$heartrate)) #see some improvement
+hist(log(data$respirationrate)) #see some imporvement
 ```
 
 ```{r}
 ### try some simple linear regression
 #continuous variable
-summary(lm(losdays2~ageyear,data = data))
-summary(lm(losdays2~bmi,data = data))
-summary(lm(losdays2~bpsystolic,data = data))
-summary(lm(losdays2~o2sat,data = data))
-summary(lm(losdays2~temperature,data = data))
-summary(lm(losdays2~heartrate,data = data))
-summary(lm(losdays2~respirationrate,data = data))
-summary(lm(losdays2~bpdiastolic,data = data))
-
 summary(lm(log(losdays2)~ageyear,data = data))
 summary(lm(log(losdays2)~bmi,data = data))
 summary(lm(log(losdays2)~bpsystolic,data = data))
 summary(lm(log(losdays2)~o2sat,data = data))
 summary(lm(log(losdays2)~temperature,data = data))
-summary(lm(log(losdays2)~heartrate,data = data))
-summary(lm(log(losdays2)~respirationrate,data = data))
+summary(lm(log(losdays2)~log(heartrate),data = data))
+summary(lm(log(losdays2)~log(respirationrate),data = data))
 summary(lm(log(losdays2)~bpdiastolic,data = data))
 
 
 #categorical varialbe
-summary(lm(losdays2~as.factor(mews_catg),data=data))
-summary(lm(losdays2~as.factor(cindex_catg),data=data))
-summary(lm(losdays2~as.factor(evisit_catg),data=data))
-summary(lm(losdays2~as.factor(icu_flag),data=data))
-summary(lm(losdays2~as.factor(gender),data=data))
-summary(lm(losdays2~as.factor(race_catg),data=data))
-
 summary(lm(log(losdays2)~as.factor(mews_catg),data=data))
 summary(lm(log(losdays2)~as.factor(cindex_catg),data=data))
 summary(lm(log(losdays2)~as.factor(evisit_catg),data=data))
 summary(lm(log(losdays2)~as.factor(icu_flag),data=data))
 summary(lm(log(losdays2)~as.factor(gender),data=data))
 summary(lm(log(losdays2)~as.factor(race_catg),data=data))
+summary(lm(log(losdays2)~religion,data = data))
+summary(lm(log(losdays2)~insurance_catg, data = data))
+summary(lm(log(losdays2)~marital_catg, data = data))
 
 ###try to make bmi into categorical variable
 #reference: http://apps.who.int/bmi/index.jsp?introPage=intro_3.html
@@ -174,20 +169,52 @@ data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
 table(data$bmi_catg)
 summary(lm(log(losdays2)~bmi_catg,data=data))
 ###try to separate the data into icu_flag = 0 and icu_flag = 1
+data_icu0 = data[data$icu_flag==0,]
+data_icu1 = data[data$icu_flag==1,]
 ```
 
 ```{r}
-#build the main model
+###build the main model
+whole_model = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
+                 log(heartrate)+log(respirationrate)+bpdiastolic+
+                 religion+as.factor(mews_catg)+
+                 as.factor(cindex_catg)+as.factor(evisit_catg)+as.factor(icu_flag)+
+                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
+                 data = data)
 
-#try automatic procedure
-back<-ols_step_backward(whole_model, prem = 0.2)
+
+#try to separate the dataset with icu_flag==0 and icu_flag==1
+model_icu0 = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
+                 log(heartrate)+log(respirationrate)+bpdiastolic+
+                 religion+as.factor(mews_catg)+
+                 as.factor(cindex_catg)+as.factor(evisit_catg)+
+                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
+                 data = data_icu0)
+model_icu1 = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
+                 log(heartrate)+log(respirationrate)+bpdiastolic+
+                 religion+as.factor(mews_catg)+
+                 as.factor(cindex_catg)+as.factor(evisit_catg)+
+                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
+                 data = data_icu1)
+
+#try to eliminate all the missing values and fit the model
+data_omit_miss = na.omit(data)
+model_omit_miss = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
+                 log(heartrate)+log(respirationrate)+bpdiastolic+
+                 religion+as.factor(mews_catg)+
+                 as.factor(cindex_catg)+as.factor(evisit_catg)+as.factor(icu_flag)+
+                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
+                 data = data_omit_miss)
+
+
+###try automatic procedure
+#back<-ols_step_backward(whole_model, prem = 0.2)
 forward<-ols_step_forward(whole_model, prem = 0.2)
-step<-ols_stepwise(whole_model, prem = 0.2)
+#step<-ols_stepwise(whole_model, prem = 0.2)
 
-#criterion procedure
+###criterion procedure
 
-#model diagnostics
+###model diagnostics
 
-#cross validation/bootstrap
+###cross validation/bootstrap
 ```
-
