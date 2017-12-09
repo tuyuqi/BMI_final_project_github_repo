@@ -48,7 +48,7 @@ sum9 <- summary(data$bpdiastolic, digits = 3)
 knitr::kable(dplyr::bind_rows(
   c(variable = "Losdays2",sum1),#good to do log transform
   c(variable = "AgeYear", sum2),#quite normal
-  c(variable = "bmi",sum3),#688 missing values and long tail
+  c(variable = "bmi",sum3),#688 missing values and long tail, 3.1 min and 123 max, outlier/error
   c(variable = "bpsystolic", sum4),
   c(variable = "o2sat", sum5), # 10 observation below 90, 80 observation above 100, 2% of the data
   c(variable = "temperature", sum6), #3 less than 30 and 2 more than 50
