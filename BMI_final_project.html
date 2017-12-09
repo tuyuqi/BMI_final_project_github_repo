@@ -133,11 +133,14 @@ data = read_excel(&quot;GHProject_Dataset.xlsx&quot;) %&gt;%
   mutate(date = paste(stringr::str_sub(dateyear,-4,-1),&quot;/&quot;,month1,&quot;/&quot;,stringr::str_sub(dateyear,1,2),sep = &quot;&quot;)) %&gt;% 
   select(-month, -dateyear, -weekday, -month1) %&gt;% 
   select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
+
 #arrange the data according to the time of admission
 data = data[order(data$date),]
+
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
 data = data[!(data$is30dayreadmit == 1 &amp; data$losdays2 &gt; 30),]
+
 #filter out the data with admission within 30 days and stay longer than 30 days
 
 #tidying: collapsing, setting indicator variables, 

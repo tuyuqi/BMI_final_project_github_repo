@@ -22,11 +22,14 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
   mutate(date = paste(stringr::str_sub(dateyear,-4,-1),"/",month1,"/",stringr::str_sub(dateyear,1,2),sep = "")) %>% 
   select(-month, -dateyear, -weekday, -month1) %>% 
   select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
+
 #arrange the data according to the time of admission
 data = data[order(data$date),]
+
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
 data = data[!(data$is30dayreadmit == 1 & data$losdays2 > 30),]
+
 #filter out the data with admission within 30 days and stay longer than 30 days
 
 #tidying: collapsing, setting indicator variables, 
@@ -89,8 +92,16 @@ data$race_catg<-ifelse(data$race=="White","White",
 table(data$race_catg)
 #put other race together, might be controversal, but is more balanced
 
-#religion: patient’s religion -- unbalanced
+#religion: patient’s religion -- unbalanced, lets recode some
+data$religion[data$religion == "Angelican"] <- "Christian"
+data$religion[data$religion == "Non Denominational"] <- "Christian"
+data$religion[data$religion == "Catholic"] <- "Christian"
+data$religion[data$religion == "Hebrew"] <- "Jewish"
+data$religion[data$religion == "Mormon"] <- "Other"
+
 table(data$religion)
+
+
 #MaritalStatus: patient’s marital status-- unbalanced
 table(data$maritalstatus)
 #InsuranceType: patient’s insurance
@@ -112,13 +123,11 @@ hist(bpdiastolic)
 #try transformations of data
 par(mfrow=c(1,1))
 hist(log(data$losdays2)) #good to do log transform
-#look for outliers - max/min temperature, heart rate, etc.
-
 ```
 
 ```{r}
 ### try some simple linear regression
-#continuous varialbe
+#continuous variable
 summary(lm(losdays2~ageyear,data = data))
 summary(lm(losdays2~bmi,data = data))
 summary(lm(losdays2~bpsystolic,data = data))
