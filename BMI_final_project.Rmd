@@ -191,7 +191,7 @@ summary(lm(log(losdays2)~bmi_catg,data=data))
 ###try to separate the data into icu_flag = 0 and icu_flag = 1
 data_icu0 = data[data$icu_flag==0,]
 data_icu1 = data[data$icu_flag==1,]
-###try to separate the data into "alone" and "not along"
+###try to separate the data into "alone" and "not alone"
 data_alone = data[data$marital_catg == "Alone",]
 data_notalone = data[data$marital_catg == "Not alone",]
 ```
@@ -205,7 +205,6 @@ whole_model = lm(log(losdays2) ~ ageyear+mews_catg+
 HH::vif(whole_model)
 #religion have very very high VIF score, then we remove it from our final model
 
-#try to separate the dataset with icu_flag==0 and icu_flag==1
 
 ###try automatic procedure
 #backward procedure based on AIC
@@ -227,4 +226,21 @@ summary(lm(log(losdays2) ~ mews_catg + marital_catg + insurance_catg + as.factor
 ```
 
 
+```{r}
+#model based on variables cody suggested
+subset_data = data%>%
+  select(patientid, losdays2, date, mews_catg, cindex_catg, evisit_catg, race_catg, religion, marital_catg, insurance_catg)
+  
+  
+smaller_model = lm(log(losdays2) ~ ageyear + mews_catg + 
+                 as.factor(cindex) + as.factor(evisit) + as.factor(icu_flag) + 
+                 gender + race_catg + insurance_catg + marital_catg,
+                 data = subset_data)
+HH::vif(smaller_model) #all vifs are well under 5, no concerns of multicollinearity
 
+
+#not sure how to interpret these
+ols_stepaic_both(smaller_model)
+
+step(smaller_model, direction='both')
+```
