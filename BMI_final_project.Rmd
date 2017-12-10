@@ -213,9 +213,9 @@ summary(lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) +
     as.factor(evisit) + gender + insurance_catg + marital_catg + 
     bmi_catg + facilityname, data = data))
 #stepwise regression based on AIC
-ols_stepaic_both(whole_model)
-summary(lm(log(losdays2) ~ mews_catg + marital_catg + insurance_catg + as.factor(evisit) + ageyear + as.factor(cindex)+
-             bmi_catg+facilityname+gender, data = data))
+step(whole_model, direction='both')
+summary(lm(log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+    gender + insurance_catg + marital_catg + bmi_catg + facilityname, data = data))
 
 
 ###criterion procedure

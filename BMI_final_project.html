@@ -808,7 +808,7 @@ table(data$bmi_catg)</code></pre>
 <pre class="r"><code>###try to separate the data into icu_flag = 0 and icu_flag = 1
 data_icu0 = data[data$icu_flag==0,]
 data_icu1 = data[data$icu_flag==1,]
-###try to separate the data into &quot;alone&quot; and &quot;not along&quot;
+###try to separate the data into &quot;alone&quot; and &quot;not alone&quot;
 data_alone = data[data$marital_catg == &quot;Alone&quot;,]
 data_notalone = data[data$marital_catg == &quot;Not alone&quot;,]</code></pre>
 <pre class="r"><code>###build the main model
@@ -873,7 +873,6 @@ HH::vif(whole_model)</code></pre>
 ##                                1.146518</code></pre>
 <pre class="r"><code>#religion have very very high VIF score, then we remove it from our final model
 
-#try to separate the dataset with icu_flag==0 and icu_flag==1
 
 ###try automatic procedure
 #backward procedure based on AIC
@@ -1061,7 +1060,226 @@ step(whole_model, direction='backward')</code></pre>
 ## Multiple R-squared:  0.1079, Adjusted R-squared:  0.1014 
 ## F-statistic: 16.46 on 24 and 3265 DF,  p-value: &lt; 2.2e-16</code></pre>
 <pre class="r"><code>#stepwise regression based on AIC
-ols_stepaic_both(whole_model)</code></pre>
+step(whole_model, direction='both')</code></pre>
+<pre><code>## Start:  AIC=-1043.7
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     icu_flag + gender + race_catg + insurance_catg + marital_catg + 
+##     bmi_catg + facilityname
+## 
+##                     Df Sum of Sq    RSS      AIC
+## - race_catg          2     0.166 2355.4 -1047.47
+## - icu_flag           1     0.230 2355.4 -1045.38
+## &lt;none&gt;                           2355.2 -1043.70
+## - gender             1     2.121 2357.3 -1042.74
+## - facilityname       7    13.299 2368.5 -1039.17
+## - marital_catg       1     5.096 2360.3 -1038.59
+## - insurance_catg     1     6.169 2361.4 -1037.09
+## - bmi_catg           3    10.353 2365.6 -1035.27
+## - mews_catg          2    10.164 2365.4 -1033.53
+## - as.factor(cindex)  4    22.596 2377.8 -1020.28
+## - ageyear            1    23.747 2379.0 -1012.69
+## - as.factor(evisit)  4    49.561 2404.8  -983.18
+## 
+## Step:  AIC=-1047.47
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     icu_flag + gender + insurance_catg + marital_catg + bmi_catg + 
+##     facilityname
+## 
+##                     Df Sum of Sq    RSS      AIC
+## - icu_flag           1     0.230 2355.6 -1049.15
+## &lt;none&gt;                           2355.4 -1047.47
+## - gender             1     2.081 2357.5 -1046.56
+## + race_catg          2     0.166 2355.2 -1043.70
+## - facilityname       7    13.341 2368.7 -1042.89
+## - marital_catg       1     5.291 2360.7 -1042.08
+## - insurance_catg     1     6.048 2361.4 -1041.03
+## - bmi_catg           3    10.249 2365.6 -1039.18
+## - mews_catg          2    10.180 2365.6 -1037.28
+## - as.factor(cindex)  4    22.894 2378.3 -1023.64
+## - ageyear            1    23.871 2379.2 -1016.29
+## - as.factor(evisit)  4    50.468 2405.8  -985.72
+## 
+## Step:  AIC=-1049.15
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     gender + insurance_catg + marital_catg + bmi_catg + facilityname
+## 
+##                     Df Sum of Sq    RSS      AIC
+## &lt;none&gt;                           2355.6 -1049.15
+## - gender             1     2.088 2357.7 -1048.23
+## + icu_flag           1     0.230 2355.4 -1047.47
+## + race_catg          2     0.165 2355.4 -1045.38
+## - facilityname       7    13.293 2368.9 -1044.63
+## - marital_catg       1     5.282 2360.9 -1043.78
+## - insurance_catg     1     5.974 2361.6 -1042.81
+## - bmi_catg           3    10.203 2365.8 -1040.93
+## - mews_catg          2    10.195 2365.8 -1038.94
+## - as.factor(cindex)  4    22.804 2378.4 -1025.45
+## - ageyear            1    23.716 2379.3 -1018.19
+## - as.factor(evisit)  4    50.242 2405.8  -987.71</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + 
+##     as.factor(evisit) + gender + insurance_catg + marital_catg + 
+##     bmi_catg + facilityname, data = data)
+## 
+## Coefficients:
+##                             (Intercept)  
+##                                0.656126  
+##                                 ageyear  
+##                                0.006238  
+##             mews_catgfur deter or worse  
+##                                0.080244  
+##                         mews_catgnormal  
+##                               -0.121833  
+##                      as.factor(cindex)1  
+##                               -0.024809  
+##                      as.factor(cindex)2  
+##                                0.085571  
+##                      as.factor(cindex)3  
+##                                0.162073  
+##                      as.factor(cindex)5  
+##                                0.207513  
+##                      as.factor(evisit)1  
+##                                0.052493  
+##                      as.factor(evisit)2  
+##                                0.170383  
+##                      as.factor(evisit)3  
+##                                0.301823  
+##                      as.factor(evisit)4  
+##                                0.296458  
+##                              genderMale  
+##                                0.052491  
+##                    insurance_catgPublic  
+##                                0.095505  
+##                   marital_catgNot alone  
+##                               -0.084223  
+##                           bmi_catgobese  
+##                               -0.102909  
+##                       bmi_catgpre-obese  
+##                               -0.114460  
+##                     bmi_catgunderweight  
+##                                0.087382  
+##           facilitynameLIJ Valley Stream  
+##                                0.061341  
+##         facilitynameLenox Hill Hospital  
+##                               -0.642595  
+## facilitynameLong Island Jewish Hospital  
+##                                0.065760  
+##                        facilitynameNSUH  
+##                                0.154111  
+##          facilitynamePlainview Hospital  
+##                                0.124365  
+##          facilitynameSouthside Hospital  
+##                                0.033134  
+##            facilitynameSyosset Hospital  
+##                               -0.050031</code></pre>
+<pre class="r"><code>summary(lm(log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+    gender + insurance_catg + marital_catg + bmi_catg + facilityname, data = data))</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + 
+##     as.factor(evisit) + gender + insurance_catg + marital_catg + 
+##     bmi_catg + facilityname, data = data)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.8035 -0.5088  0.0046  0.5315  3.3678 
+## 
+## Coefficients:
+##                                          Estimate Std. Error t value
+## (Intercept)                              0.656126   0.085830   7.645
+## ageyear                                  0.006238   0.001088   5.733
+## mews_catgfur deter or worse              0.080244   0.037100   2.163
+## mews_catgnormal                         -0.121833   0.044890  -2.714
+## as.factor(cindex)1                      -0.024809   0.044920  -0.552
+## as.factor(cindex)2                       0.085571   0.043796   1.954
+## as.factor(cindex)3                       0.162073   0.052027   3.115
+## as.factor(cindex)5                       0.207513   0.045913   4.520
+## as.factor(evisit)1                       0.052493   0.042634   1.231
+## as.factor(evisit)2                       0.170383   0.047979   3.551
+## as.factor(evisit)3                       0.301823   0.056922   5.302
+## as.factor(evisit)4                       0.296458   0.041038   7.224
+## genderMale                               0.052491   0.030855   1.701
+## insurance_catgPublic                     0.095505   0.033188   2.878
+## marital_catgNot alone                   -0.084223   0.031126  -2.706
+## bmi_catgobese                           -0.102909   0.042723  -2.409
+## bmi_catgpre-obese                       -0.114460   0.037543  -3.049
+## bmi_catgunderweight                      0.087382   0.086247   1.013
+## facilitynameLIJ Valley Stream            0.061341   0.061726   0.994
+## facilitynameLenox Hill Hospital         -0.642595   0.382687  -1.679
+## facilitynameLong Island Jewish Hospital  0.065760   0.049789   1.321
+## facilitynameNSUH                         0.154111   0.047737   3.228
+## facilitynamePlainview Hospital           0.124365   0.061983   2.006
+## facilitynameSouthside Hospital           0.033134   0.054303   0.610
+## facilitynameSyosset Hospital            -0.050031   0.104900  -0.477
+##                                         Pr(&gt;|t|)    
+## (Intercept)                             2.74e-14 ***
+## ageyear                                 1.07e-08 ***
+## mews_catgfur deter or worse             0.030619 *  
+## mews_catgnormal                         0.006682 ** 
+## as.factor(cindex)1                      0.580778    
+## as.factor(cindex)2                      0.050801 .  
+## as.factor(cindex)3                      0.001855 ** 
+## as.factor(cindex)5                      6.41e-06 ***
+## as.factor(evisit)1                      0.218317    
+## as.factor(evisit)2                      0.000389 ***
+## as.factor(evisit)3                      1.22e-07 ***
+## as.factor(evisit)4                      6.25e-13 ***
+## genderMale                              0.088991 .  
+## insurance_catgPublic                    0.004033 ** 
+## marital_catgNot alone                   0.006848 ** 
+## bmi_catgobese                           0.016063 *  
+## bmi_catgpre-obese                       0.002317 ** 
+## bmi_catgunderweight                     0.311059    
+## facilitynameLIJ Valley Stream           0.320412    
+## facilitynameLenox Hill Hospital         0.093215 .  
+## facilitynameLong Island Jewish Hospital 0.186666    
+## facilitynameNSUH                        0.001257 ** 
+## facilitynamePlainview Hospital          0.044891 *  
+## facilitynameSouthside Hospital          0.541792    
+## facilitynameSyosset Hospital            0.633438    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.8494 on 3265 degrees of freedom
+##   (316 observations deleted due to missingness)
+## Multiple R-squared:  0.1079, Adjusted R-squared:  0.1014 
+## F-statistic: 16.46 on 24 and 3265 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>###criterion procedure
+
+###model diagnostics
+
+###cross validation/bootstrap</code></pre>
+<pre class="r"><code>#model based on variables cody suggested
+subset_data = data%&gt;%
+  select(patientid, losdays2, date, mews_catg, cindex_catg, evisit_catg, race_catg, religion, marital_catg, insurance_catg)
+  
+  
+smaller_model = lm(log(losdays2) ~ ageyear + mews_catg + 
+                 as.factor(cindex) + as.factor(evisit) + as.factor(icu_flag) + 
+                 gender + race_catg + insurance_catg + marital_catg,
+                 data = subset_data)
+HH::vif(smaller_model) #all vifs are well under 5, no concerns of multicollinearity</code></pre>
+<pre><code>##                     ageyear mews_catgfur deter or worse 
+##                    1.794983                    1.422558 
+##             mews_catgnormal          as.factor(cindex)1 
+##                    1.301002                    1.315991 
+##          as.factor(cindex)2          as.factor(cindex)3 
+##                    1.377867                    1.273573 
+##          as.factor(cindex)5          as.factor(evisit)1 
+##                    1.425191                    1.340436 
+##          as.factor(evisit)2          as.factor(evisit)3 
+##                    1.279069                    1.195077 
+##          as.factor(evisit)4        as.factor(icu_flag)1 
+##                    1.434568                    1.020153 
+##                  genderMale race_catgAfrican Amer/Black 
+##                    1.068339                    1.156961 
+##         race_catgOther race        insurance_catgPublic 
+##                    1.141744                    1.235005 
+##       marital_catgNot alone 
+##                    1.087326</code></pre>
+<pre class="r"><code>#not sure how to interpret these
+ols_stepaic_both(smaller_model)</code></pre>
 <pre><code>## No more variables to be added or removed.</code></pre>
 <pre><code>## 
 ## 
@@ -1075,87 +1293,80 @@ ols_stepaic_both(whole_model)</code></pre>
 ## as.factor(evisit)    addition    8380.795    2445.588    194.975    0.074        0.072 
 ## ageyear              addition    8325.384    2403.282    237.281    0.090        0.087 
 ## as.factor(cindex)    addition    8302.337    2380.710    259.853    0.098        0.095 
-## bmi_catg             addition    8294.827    2370.954    269.609    0.102        0.098 
-## facilityname         addition    8290.385    2357.701    282.863    0.107        0.101 
-## gender               addition    8289.470    2355.612    284.951    0.108        0.101 
+## gender               addition    8301.807    2378.880    261.683    0.099        0.095 
 ## --------------------------------------------------------------------------------------</code></pre>
-<pre class="r"><code>summary(lm(log(losdays2) ~ mews_catg + marital_catg + insurance_catg + as.factor(evisit) + ageyear + as.factor(cindex)+
-             bmi_catg+facilityname+gender, data = data))</code></pre>
+<pre class="r"><code>step(smaller_model, direction='both')</code></pre>
+<pre><code>## Start:  AIC=-1031.25
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     as.factor(icu_flag) + gender + race_catg + insurance_catg + 
+##     marital_catg
+## 
+##                       Df Sum of Sq    RSS      AIC
+## - race_catg            2     0.182 2378.7 -1035.00
+## - as.factor(icu_flag)  1     0.127 2378.7 -1033.07
+## &lt;none&gt;                             2378.6 -1031.25
+## - gender               1     1.839 2380.4 -1030.70
+## - marital_catg         1     3.894 2382.5 -1027.87
+## - mews_catg            2     6.067 2384.6 -1026.87
+## - insurance_catg       1     7.460 2386.0 -1022.95
+## - as.factor(cindex)    4    22.142 2400.7 -1008.76
+## - ageyear              1    31.361 2409.9  -990.15
+## - as.factor(evisit)    4    54.030 2432.6  -965.35
+## 
+## Step:  AIC=-1035
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     as.factor(icu_flag) + gender + insurance_catg + marital_catg
+## 
+##                       Df Sum of Sq    RSS      AIC
+## - as.factor(icu_flag)  1     0.135 2378.9 -1036.81
+## &lt;none&gt;                             2378.7 -1035.00
+## - gender               1     1.828 2380.6 -1034.47
+## - marital_catg         1     4.031 2382.8 -1031.42
+## + race_catg            2     0.182 2378.6 -1031.25
+## - mews_catg            2     6.063 2384.8 -1030.62
+## - insurance_catg       1     7.689 2386.4 -1026.38
+## - as.factor(cindex)    4    22.136 2400.9 -1012.52
+## - ageyear              1    33.175 2411.9  -991.43
+## - as.factor(evisit)    4    54.552 2433.3  -968.40
+## 
+## Step:  AIC=-1036.81
+## log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
+##     gender + insurance_catg + marital_catg
+## 
+##                       Df Sum of Sq    RSS      AIC
+## &lt;none&gt;                             2378.9 -1036.81
+## - gender               1     1.830 2380.7 -1036.28
+## + as.factor(icu_flag)  1     0.135 2378.7 -1035.00
+## - marital_catg         1     4.021 2382.9 -1033.25
+## + race_catg            2     0.191 2378.7 -1033.07
+## - mews_catg            2     6.050 2384.9 -1032.45
+## - insurance_catg       1     7.618 2386.5 -1028.29
+## - as.factor(cindex)    4    22.086 2401.0 -1014.40
+## - ageyear              1    33.071 2411.9  -993.39
+## - as.factor(evisit)    4    54.426 2433.3  -970.38</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = log(losdays2) ~ mews_catg + marital_catg + insurance_catg + 
-##     as.factor(evisit) + ageyear + as.factor(cindex) + bmi_catg + 
-##     facilityname + gender, data = data)
-## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -4.8035 -0.5088  0.0046  0.5315  3.3678 
+## lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + 
+##     as.factor(evisit) + gender + insurance_catg + marital_catg, 
+##     data = subset_data)
 ## 
 ## Coefficients:
-##                                          Estimate Std. Error t value
-## (Intercept)                              0.656126   0.085830   7.645
-## mews_catgfur deter or worse              0.080244   0.037100   2.163
-## mews_catgnormal                         -0.121833   0.044890  -2.714
-## marital_catgNot alone                   -0.084223   0.031126  -2.706
-## insurance_catgPublic                     0.095505   0.033188   2.878
-## as.factor(evisit)1                       0.052493   0.042634   1.231
-## as.factor(evisit)2                       0.170383   0.047979   3.551
-## as.factor(evisit)3                       0.301823   0.056922   5.302
-## as.factor(evisit)4                       0.296458   0.041038   7.224
-## ageyear                                  0.006238   0.001088   5.733
-## as.factor(cindex)1                      -0.024809   0.044920  -0.552
-## as.factor(cindex)2                       0.085571   0.043796   1.954
-## as.factor(cindex)3                       0.162073   0.052027   3.115
-## as.factor(cindex)5                       0.207513   0.045913   4.520
-## bmi_catgobese                           -0.102909   0.042723  -2.409
-## bmi_catgpre-obese                       -0.114460   0.037543  -3.049
-## bmi_catgunderweight                      0.087382   0.086247   1.013
-## facilitynameLIJ Valley Stream            0.061341   0.061726   0.994
-## facilitynameLenox Hill Hospital         -0.642595   0.382687  -1.679
-## facilitynameLong Island Jewish Hospital  0.065760   0.049789   1.321
-## facilitynameNSUH                         0.154111   0.047737   3.228
-## facilitynamePlainview Hospital           0.124365   0.061983   2.006
-## facilitynameSouthside Hospital           0.033134   0.054303   0.610
-## facilitynameSyosset Hospital            -0.050031   0.104900  -0.477
-## genderMale                               0.052491   0.030855   1.701
-##                                         Pr(&gt;|t|)    
-## (Intercept)                             2.74e-14 ***
-## mews_catgfur deter or worse             0.030619 *  
-## mews_catgnormal                         0.006682 ** 
-## marital_catgNot alone                   0.006848 ** 
-## insurance_catgPublic                    0.004033 ** 
-## as.factor(evisit)1                      0.218317    
-## as.factor(evisit)2                      0.000389 ***
-## as.factor(evisit)3                      1.22e-07 ***
-## as.factor(evisit)4                      6.25e-13 ***
-## ageyear                                 1.07e-08 ***
-## as.factor(cindex)1                      0.580778    
-## as.factor(cindex)2                      0.050801 .  
-## as.factor(cindex)3                      0.001855 ** 
-## as.factor(cindex)5                      6.41e-06 ***
-## bmi_catgobese                           0.016063 *  
-## bmi_catgpre-obese                       0.002317 ** 
-## bmi_catgunderweight                     0.311059    
-## facilitynameLIJ Valley Stream           0.320412    
-## facilitynameLenox Hill Hospital         0.093215 .  
-## facilitynameLong Island Jewish Hospital 0.186666    
-## facilitynameNSUH                        0.001257 ** 
-## facilitynamePlainview Hospital          0.044891 *  
-## facilitynameSouthside Hospital          0.541792    
-## facilitynameSyosset Hospital            0.633438    
-## genderMale                              0.088991 .  
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 0.8494 on 3265 degrees of freedom
-##   (316 observations deleted due to missingness)
-## Multiple R-squared:  0.1079, Adjusted R-squared:  0.1014 
-## F-statistic: 16.46 on 24 and 3265 DF,  p-value: &lt; 2.2e-16</code></pre>
-<pre class="r"><code>###criterion procedure
-
-###model diagnostics
-
-###cross validation/bootstrap</code></pre>
+##                 (Intercept)                      ageyear  
+##                    0.589203                     0.007092  
+## mews_catgfur deter or worse              mews_catgnormal  
+##                    0.065722                    -0.080563  
+##          as.factor(cindex)1           as.factor(cindex)2  
+##                   -0.038365                     0.077096  
+##          as.factor(cindex)3           as.factor(cindex)5  
+##                    0.149846                     0.197943  
+##          as.factor(evisit)1           as.factor(evisit)2  
+##                    0.058837                     0.181526  
+##          as.factor(evisit)3           as.factor(evisit)4  
+##                    0.317681                     0.306398  
+##                  genderMale         insurance_catgPublic  
+##                    0.048895                     0.106944  
+##       marital_catgNot alone  
+##                   -0.072596</code></pre>
 
 
 
