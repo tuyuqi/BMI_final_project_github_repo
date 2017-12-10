@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
 library(dplyr)
 library(olsrr)
+library(forcats)
 ```
 
 ```{r}
@@ -25,7 +26,7 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
   select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
 
 #arrange the data according to the time of admission
-data = data[order(data$date),]
+data = data[order(data$date),] 
 
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
@@ -61,8 +62,10 @@ knitr::kable(dplyr::bind_rows(
 #0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
 table(data$mews)
 #make them into 3 category and try to make the data balanced (though not perfect)
-data$mews_catg<-ifelse(data$mews==0|data$mews==1,1,
-                       ifelse(data$mews==2|data$mews==3, 2,3))
+data$mews_catg<-ifelse(data$mews==0|data$mews==1,"normal",
+                       ifelse(data$mews==2|data$mews==3,"increase caution",
+                       ifelse(is.na(data$mews) == TRUE,NA,"fur deter or worse")))
+data = data %>% mutate(mews_catg = fct_relevel(mews_catg,"increase caution"))
 table(data$mews_catg)
 #mews_catg: 1=normal; 2=increase caution; 3 = further deterioration or immediate action required
 
@@ -70,12 +73,16 @@ table(data$mews_catg)
 table(data$cindex)
 #make them into three category to balance the data
 data$cindex_catg<-ifelse(data$cindex==0,"normal",
-                         ifelse(data$cindex==1|data$cindex==2,"mild","moderate to severe"))
+                         ifelse(data$cindex==1|data$cindex==2,"mild",
+                         ifelse(is.na(data$cindex)==TRUE,NA,"moderate to severe")))
+data = data %>% mutate(cindex_catg = fct_relevel(cindex_catg,"mild"))
 table(data$cindex_catg)
 
 #evisit
 table(data$evisit)
-data$evisit_catg<-ifelse(data$evisit==0|data$evisit==1,1,2)
+data$evisit_catg<-ifelse(data$evisit==0|data$evisit==1,"No or1 visit",
+                  ifelse(is.na(data$evisit)==TRUE,NA,"More than 1"))
+data = data %>% mutate(evisit_catg = fct_relevel(evisit_catg,"No or1 visit"))
 table(data$evisit_catg)
 #evisit_catg:1=0 or 1 emergency department visit;2=more than once emergency department visit(may indicate the serious sickness)
 
@@ -86,8 +93,8 @@ table(data$gender)
 #race: patient???s race -- quite unbalanced
 table(data$race)
 data$race_catg<-ifelse(data$race=="White","White",
-                ifelse(data$race=="African Amer/Black","African Amer/Black",
-                "Other race"))
+                ifelse(data$race=="African Amer/Black","African Amer/Black","Other race"))
+data = data %>% mutate(race_catg = fct_relevel(race_catg, "White"))
 table(data$race_catg)
 #put other race together, might be controversal, but is more balanced
 
@@ -97,18 +104,23 @@ data$religion[data$religion == "Non Denominational"] <- "Christian"
 data$religion[data$religion == "Catholic"] <- "Christian"
 data$religion[data$religion == "Hebrew"] <- "Jewish"
 data$religion[data$religion == "Mormon"] <- "Other"
-
+data = data %>% mutate(religion = fct_relevel(religion, "Christian"))
 table(data$religion)
 
 
 #MaritalStatus: patient???s marital status-- unbalanced
 table(data$maritalstatus)
-data$marital_catg <- ifelse(data$maritalstatus=="Civial            Union"|data$maritalstatus=="Married"|data$maritalstatus=="Civial Union","Not alone","Alone")
+data$marital_catg <- ifelse(data$maritalstatus=="Civial            Union"|data$maritalstatus=="Married"|data$maritalstatus=="Civial Union","Not alone",
+                      ifelse(data$maritalstatus=="Divorced"|data$maritalstatus=="Single"|
+                             data$maritalstatus=="Widowed","Alone",NA))
 table(data$marital_catg)
 #InsuranceType: patient???s insurance
 table(data$insurancetype)
-data$insurance_catg <- ifelse(data$insurancetype=="Private","Private","Public")
+data$insurance_catg <- ifelse(data$insurancetype=="Private","Private",
+                        ifelse(data$insurancetype=="Medicaid"|data$insurancetype=="Medicare","Public",NA))
 table(data$insurance_catg)
+
+table(data$facilityname)
 
 
 
@@ -128,8 +140,6 @@ hist(bpdiastolic)
 #try transformations of data
 par(mfrow=c(1,1))
 hist(log(data$losdays2)) #good to do log transform
-hist(log(data$heartrate)) #see some improvement
-hist(log(data$respirationrate)) #see some imporvement
 ```
 
 ```{r}
@@ -156,61 +166,58 @@ summary(lm(log(losdays2)~religion,data = data))
 summary(lm(log(losdays2)~insurance_catg, data = data))
 summary(lm(log(losdays2)~marital_catg, data = data))
 
+
+###replace missing bmi with the mean of the rest
+replace_missing_value = function(vec){
+#for numeric vectors, fill in missing values with the mean or median of non-missing values
+  vec[is.na(vec)] = round(mean(vec,na.rm = TRUE),1)
+  vec #return the vector
+}
+data$bmi = replace_missing_value(data$bmi)
+
 ###try to make bmi into categorical variable
 #reference: http://apps.who.int/bmi/index.jsp?introPage=intro_3.html
 #<18.5 underweight
 #18.5-24.99 normal
 #25-29.99 pre-obese
 #>30 obese
+
 data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
                 ifelse(data$bmi<25,"normal",
                 ifelse(data$bmi<30,"pre-obese",
-                       "obese")))
+                ifelse(data$bmi>=30,"obese",NA))))
 table(data$bmi_catg)
 summary(lm(log(losdays2)~bmi_catg,data=data))
 ###try to separate the data into icu_flag = 0 and icu_flag = 1
 data_icu0 = data[data$icu_flag==0,]
 data_icu1 = data[data$icu_flag==1,]
+###try to separate the data into "alone" and "not along"
+data_alone = data[data$marital_catg == "Alone",]
+data_notalone = data[data$marital_catg == "Not alone",]
 ```
 
 ```{r}
 ###build the main model
-whole_model = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
-                 log(heartrate)+log(respirationrate)+bpdiastolic+
-                 religion+as.factor(mews_catg)+
-                 as.factor(cindex_catg)+as.factor(evisit_catg)+as.factor(icu_flag)+
-                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
+whole_model = lm(log(losdays2) ~ ageyear+mews_catg+
+                 as.factor(cindex)+as.factor(evisit)+icu_flag+
+                 gender+race_catg+insurance_catg+marital_catg+bmi_catg+facilityname,
                  data = data)
-
+HH::vif(whole_model)
+#religion have very very high VIF score, then we remove it from our final model
 
 #try to separate the dataset with icu_flag==0 and icu_flag==1
-model_icu0 = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
-                 log(heartrate)+log(respirationrate)+bpdiastolic+
-                 religion+as.factor(mews_catg)+
-                 as.factor(cindex_catg)+as.factor(evisit_catg)+
-                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
-                 data = data_icu0)
-model_icu1 = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
-                 log(heartrate)+log(respirationrate)+bpdiastolic+
-                 religion+as.factor(mews_catg)+
-                 as.factor(cindex_catg)+as.factor(evisit_catg)+
-                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
-                 data = data_icu1)
-
-#try to eliminate all the missing values and fit the model
-data_omit_miss = na.omit(data)
-model_omit_miss = lm(log(losdays2)~ageyear+bmi+bpsystolic+o2sat+temperature+
-                 log(heartrate)+log(respirationrate)+bpdiastolic+
-                 religion+as.factor(mews_catg)+
-                 as.factor(cindex_catg)+as.factor(evisit_catg)+as.factor(icu_flag)+
-                 as.factor(gender)+as.factor(race_catg)+insurance_catg+marital_catg,
-                 data = data_omit_miss)
-
 
 ###try automatic procedure
-#back<-ols_step_backward(whole_model, prem = 0.2)
-forward<-ols_step_forward(whole_model, prem = 0.2)
-#step<-ols_stepwise(whole_model, prem = 0.2)
+#backward procedure based on AIC
+step(whole_model, direction='backward')
+summary(lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + 
+    as.factor(evisit) + gender + insurance_catg + marital_catg + 
+    bmi_catg + facilityname, data = data))
+#stepwise regression based on AIC
+ols_stepaic_both(whole_model)
+summary(lm(log(losdays2) ~ mews_catg + marital_catg + insurance_catg + as.factor(evisit) + ageyear + as.factor(cindex)+
+             bmi_catg+facilityname+gender, data = data))
+
 
 ###criterion procedure
 
@@ -218,3 +225,6 @@ forward<-ols_step_forward(whole_model, prem = 0.2)
 
 ###cross validation/bootstrap
 ```
+
+
+
