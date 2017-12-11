@@ -98,7 +98,7 @@ data = data %>% mutate(race_catg = fct_relevel(race_catg, "White"))
 table(data$race_catg)
 #put other race together, might be controversal, but is more balanced
 
-#religion: patient???s religion -- unbalanced, lets recode some
+#religion: patient's religion -- unbalanced, lets recode some
 data$religion[data$religion == "Angelican"] <- "Christian"
 data$religion[data$religion == "Non Denominational"] <- "Christian"
 data$religion[data$religion == "Catholic"] <- "Christian"
@@ -108,13 +108,13 @@ data = data %>% mutate(religion = fct_relevel(religion, "Christian"))
 table(data$religion)
 
 
-#MaritalStatus: patient???s marital status-- unbalanced
+#MaritalStatus: patient's marital status-- unbalanced
 table(data$maritalstatus)
-data$marital_catg <- ifelse(data$maritalstatus=="Civial            Union"|data$maritalstatus=="Married"|data$maritalstatus=="Civial Union","Not alone",
+data$marital_catg <- ifelse(data$maritalstatus=="Civial Union"|data$maritalstatus=="Married"|data$maritalstatus=="Civial Union","Not alone",
                       ifelse(data$maritalstatus=="Divorced"|data$maritalstatus=="Single"|
                              data$maritalstatus=="Widowed","Alone",NA))
 table(data$marital_catg)
-#InsuranceType: patient???s insurance
+#InsuranceType: patient's insurance
 table(data$insurancetype)
 data$insurance_catg <- ifelse(data$insurancetype=="Private","Private",
                         ifelse(data$insurancetype=="Medicaid"|data$insurancetype=="Medicare","Public",NA))
@@ -143,6 +143,26 @@ hist(log(data$losdays2)) #good to do log transform
 ```
 
 ```{r}
+## put (absolute) correlations on the upper panels,
+## with size proportional to the correlations.
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- abs(cor(x, y))
+    txt <- format(c(r, 0.123456789), digits = digits)[1]
+    txt <- paste0(prefix, txt)
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)*3
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+# na.omit in order to have the correlation coefficients to be calculated
+data_no_na = data %>% na.omit()
+
+#correlation matrix
+pairs(~log(losdays2) + ageyear + bmi + bpsystolic + o2sat+ temperature +log(heartrate) +log(respirationrate)+ bpdiastolic, data=data_no_na, lower.panel = panel.smooth, upper.panel = panel.cor,main = "Correlation matrix for continuous data" )
+
+
+
 ### try some simple linear regression
 #continuous variable
 summary(lm(log(losdays2)~ageyear,data = data))
@@ -227,11 +247,11 @@ summary(lm(log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(e
 
 
 ```{r}
-#model based on variables cody suggested
+# model based on variables cody suggested
 subset_data = data%>%
   select(patientid, losdays2, date, mews_catg, cindex_catg, evisit_catg, race_catg, religion, marital_catg, insurance_catg)
   
-  
+
 smaller_model = lm(log(losdays2) ~ ageyear + mews_catg + 
                  as.factor(cindex) + as.factor(evisit) + as.factor(icu_flag) + 
                  gender + race_catg + insurance_catg + marital_catg,
@@ -244,3 +264,21 @@ ols_stepaic_both(smaller_model)
 
 step(smaller_model, direction='both')
 ```
+
+
+
+```{r}
+## If we excluded the abnormal obervations
+## temperature > 41 celsius
+
+filter_temp_bmi= data %>% 
+  filter(temperature <=41 | bmi <= 55)
+
+
+full_model_with_interaction =lm(log(losdays2) ~ is30dayreadmit + cindex + evisit + ageyear + race_catg + insurance_catg + marital_catg + 
+ o2sat + temperature + heartrate + respirationrate + bpdiastolic +  is30dayreadmit:cindex + is30dayreadmit:facilityname + is30dayreadmit:o2sat + evisit:ageyear + ageyear:marital_catg + gender:heartrate + gender:bpdiastolic + facilityname:insurance_catg + facilityname:respirationrate, data = filter_temp_bmi)
+
+
+step(full_model_with_interaction, direction='both')
+```
+
