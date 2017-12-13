@@ -31,9 +31,10 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
   mutate(month1 = match(month,month.name)) %>% 
   mutate(date = paste(stringr::str_sub(dateyear,-4,-1),"/",month1,"/",stringr::str_sub(dateyear,1,2),sep = "")) %>% 
   mutate(bmi = replace_missing_value(bmi)) %>% 
-  #filter out extreme value of temperature
-  filter(temperature < 48, bmi < 60) %>% 
-  filter(!(bmi > 60)) %>% 
+  #filter out extreme temperatures
+  filter(temperature < 48, temperature > 29) %>% 
+  #filter out concerning bmi values
+  filter(!(bmi > 65), !(bmi < 12)) %>% 
   select(-month, -dateyear, -weekday, -month1) %>% 
   select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
 
@@ -60,7 +61,7 @@ sum9 <- summary(data$bpdiastolic, digits = 3)
 knitr::kable(dplyr::bind_rows(
   c(variable = "Losdays2",sum1),#good to do log transform
   c(variable = "AgeYear", sum2),#quite normal
-  c(variable = "bmi",sum3),#688 missing values and long tail, 3.1 min and 123 max, outlier/error
+  c(variable = "bmi",sum3),#688 missing values and long tail
   c(variable = "bpsystolic", sum4),
   c(variable = "o2sat", sum5), # 10 observation below 90, 80 observation above 100, 2% of the data
   c(variable = "temperature", sum6), #3 less than 30 and 2 more than 50
@@ -108,7 +109,7 @@ data$race_catg<-ifelse(data$race=="White","White",
                 ifelse(data$race=="African Amer/Black","African Amer/Black","Other race"))
 data = data %>% mutate(race_catg = fct_relevel(race_catg, "White"))
 table(data$race_catg)
-#put other race together, might be controversal, but is more balanced
+#put other race together, might be controversial, but is more balanced
 
 #religion: patient's religion -- unbalanced, lets recode some
 data$religion[data$religion == "Angelican"] <- "Christian"
@@ -126,6 +127,7 @@ data$marital_catg <- ifelse(data$maritalstatus=="Civial Union"|data$maritalstatu
                       ifelse(data$maritalstatus=="Divorced"|data$maritalstatus=="Single"|
                              data$maritalstatus=="Widowed","Alone",NA))
 table(data$marital_catg)
+
 #InsuranceType: patient's insurance
 table(data$insurancetype)
 data$insurance_catg <- ifelse(data$insurancetype=="Private","Private",
@@ -205,6 +207,8 @@ summary(lm(log(losdays2)~marital_catg, data = data))
 #25-29.99 pre-obese
 #>30 obese
 
+#categorizing
+
 data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
                 ifelse(data$bmi<25,"normal",
                 ifelse(data$bmi<30,"pre-obese",
@@ -217,6 +221,19 @@ data_icu1 = data[data$icu_flag==1,]
 ###try to separate the data into "alone" and "not alone"
 data_alone = data[data$marital_catg == "Alone",]
 data_notalone = data[data$marital_catg == "Not alone",]
+
+#fit bmi again with nas omitted
+data_bmiomit = data %>%
+  na.omit(bmi)
+summary(lm(log(losdays2) ~ bmi_catg, data = data_bmiomit))
+
+#fit bmi again with 2 levels for BMI obese and not obese, nas not omitted
+data$bmi_catg_2<-ifelse(data$bmi<25,"not obese", "obese")
+summary(lm(log(losdays2) ~ bmi_catg_2, data = data))
+
+#fit bmi with 2 levels for BMI obese and not obese, nas omitted
+data_bmiomit$bmi_catg_2<-ifelse(data_bmiomit$bmi<25,"not obese", "obese")
+summary(lm(log(losdays2) ~ bmi_catg_2, data = data_bmiomit))
 ```
 
 ```{r}
