@@ -25,10 +25,7 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
          log_day = log(losdays2)) %>% 
   #filter out extreme temperatures
   filter(temperature < 48, temperature > 29) %>% 
-  #filter out concerning bmi values
-  filter(!(bmi > 65), !(bmi < 12)) %>% 
-  select(-month, -dateyear, -weekday, -month1) %>% 
-  select(patientid, visitid, loshours, losdays2, is30dayreadmit, date, everything())
+  select(-month, -dateyear, -weekday, -month1)
 
 #arrange the data according to the time of admission
 data = data[order(data$date),] 
@@ -36,42 +33,44 @@ data = data[order(data$date),]
 #remove those more than one visits
 data = data[!duplicated(data$patientid),]
 data = data[!(data$is30dayreadmit == 1 & data$losdays2 > 30),]
+data = data %>%
+  select(patientid, visitid, loshours, losdays2, date, cindex, evisit, icu_flag, ageyear, gender, race, religion, maritalstatus, facilityname, insurancetype, bpsystolic, o2sat, temperature, heartrate, respirationrate, bpdiastolic, log_day) %>% 
+#remove the observation with NAs
+  na.omit()
 
 #tidying: collapsing, setting indicator variables, 
 #####descriptive statistics of each variable
 ##continuous variable
-sum1 <- summary(data$losdays2,digits = 3) #transformation get good results
+sum1 <- summary(data$losdays2,digits = 3) #transformation get good results 
 sum2 <- summary(data$ageyear,digits = 3) 
-sum3 <- summary(data$bmi,digits = 3) #a lot of NA's
-sum4 <- summary(data$bpsystolic,digits = 3)
-sum5 <- summary(data$o2sat,digits = 3)
-sum6 <- summary(data$temperature, digits = 3)
-sum7 <- summary(data$heartrate, digits = 3)
-sum8 <- summary(data$respirationrate, digits = 3)
-sum9 <- summary(data$bpdiastolic, digits = 3)
+sum3 <- summary(data$bpsystolic,digits = 3) 
+sum4 <- summary(data$o2sat,digits = 3)
+sum5 <- summary(data$temperature, digits = 3)
+sum6 <- summary(data$heartrate, digits = 3)
+sum7 <- summary(data$respirationrate, digits = 3)
+sum8 <- summary(data$bpdiastolic, digits = 3)
 
 knitr::kable(dplyr::bind_rows(
   c(variable = "Losdays2",sum1),#good to do log transform
   c(variable = "AgeYear", sum2),#quite normal
-  c(variable = "bmi",sum3),#688 missing values and long tail
-  c(variable = "bpsystolic", sum4),
-  c(variable = "o2sat", sum5), # 10 observation below 90, 80 observation above 100, 2% of the data
-  c(variable = "temperature", sum6), #3 less than 30 and 2 more than 50
-  c(variable = "heartrate", sum7), # 2 more than 240 (rare heart rate or caused by disease)
-  c(variable = "respirationrate", sum8),
-  c(variable = "bpdiastolic", sum9)
+  c(variable = "bpsystolic",sum3),
+  c(variable = "o2sat", sum4), # 10 observation below 90, 80 observation above 100, 2% of the data
+  c(variable = "temperature", sum5), #3 less than 30 and 2 more than 50
+  c(variable = "heartrate", sum6), # 2 more than 240 (rare heart rate or caused by disease)
+  c(variable = "respirationrate", sum7),
+  c(variable = "bpdiastolic", sum8),
 ))
 
 ##categorical variable
 #MEWS: The Modified Early Warning Score (MEWS) 
 #0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
-table(data$mews)
+#table(data$mews)
 #make them into 3 category and try to make the data balanced (though not perfect)
-data$mews_catg<-ifelse(data$mews==0|data$mews==1,"normal",
-                       ifelse(data$mews==2|data$mews==3,"increase caution",
-                       ifelse(is.na(data$mews) == TRUE,NA,"fur deter or worse")))
-data = data %>% mutate(mews_catg = fct_relevel(mews_catg,"increase caution"))
-table(data$mews_catg)
+#data$mews_catg<-ifelse(data$mews==0|data$mews==1,"normal",
+                       #ifelse(data$mews==2|data$mews==3,"increase caution",
+                       #ifelse(is.na(data$mews) == TRUE,NA,"fur deter or worse")))
+#data = data %>% mutate(mews_catg = fct_relevel(mews_catg,"increase caution"))
+#table(data$mews_catg)
 #mews_catg: 1=normal; 2=increase caution; 3 = further deterioration or immediate action required
 
 #Cindex -- Charlson comorbidity index (CCI) ranks patients based on severity of comorbidity: 0=normal, 1-2=mild, 3-4=moderate and >5=severe
@@ -147,10 +146,6 @@ hist(bpdiastolic)
 #try transformations of data
 par(mfrow=c(1,1))
 hist(log(data$losdays2)) #good to do log transform
-
-#make log outcome column
-data = data %>%
-  mutate(log_los = log(losdays2))
 ```
 
 ```{r}
@@ -206,31 +201,31 @@ summary(lm(log(losdays2)~marital_catg, data = data))
 
 #categorizing
 
-data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
-                ifelse(data$bmi<25,"normal",
-                ifelse(data$bmi<30,"pre-obese",
-                ifelse(data$bmi>=30,"obese",NA))))
-table(data$bmi_catg)
-summary(lm(log(losdays2)~bmi_catg,data=data))
+#data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
+                #ifelse(data$bmi<25,"normal",
+                #ifelse(data$bmi<30,"pre-obese",
+                #ifelse(data$bmi>=30,"obese",NA))))
+#table(data$bmi_catg)
+#summary(lm(log(losdays2)~bmi_catg,data=data))
 ###try to separate the data into icu_flag = 0 and icu_flag = 1
-data_icu0 = data[data$icu_flag==0,]
-data_icu1 = data[data$icu_flag==1,]
+#data_icu0 = data[data$icu_flag==0,]
+#data_icu1 = data[data$icu_flag==1,]
 ###try to separate the data into "alone" and "not alone"
-data_alone = data[data$marital_catg == "Alone",]
-data_notalone = data[data$marital_catg == "Not alone",]
+#data_alone = data[data$marital_catg == "Alone",]
+#data_notalone = data[data$marital_catg == "Not alone",]
 
 #fit bmi again with nas omitted
-data_bmiomit = data %>%
-  na.omit(bmi)
-summary(lm(log(losdays2) ~ bmi_catg, data = data_bmiomit))
+#data_bmiomit = data %>%
+ # na.omit(bmi)
+#summary(lm(log(losdays2) ~ bmi_catg, data = data_bmiomit))
 
 #fit bmi again with 2 levels for BMI obese and not obese, nas not omitted
-data$bmi_catg_2<-ifelse(data$bmi<25,"not obese", "obese")
-summary(lm(log(losdays2) ~ bmi_catg_2, data = data))
+#data$bmi_catg_2<-ifelse(data$bmi<25,"not obese", "obese")
+#summary(lm(log(losdays2) ~ bmi_catg_2, data = data))
 
 #fit bmi with 2 levels for BMI obese and not obese, nas omitted
-data_bmiomit$bmi_catg_2<-ifelse(data_bmiomit$bmi<25,"not obese", "obese")
-summary(lm(log(losdays2) ~ bmi_catg_2, data = data_bmiomit))
+#data_bmiomit$bmi_catg_2<-ifelse(data_bmiomit$bmi<25,"not obese", "obese")
+#summary(lm(log(losdays2) ~ bmi_catg_2, data = data_bmiomit))
 ```
 
 ```{r}
