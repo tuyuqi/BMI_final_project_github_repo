@@ -9,7 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
 library(dplyr)
-library(olsrr)
 library(forcats)
 ```
 
@@ -25,7 +24,9 @@ data = read_excel("GHProject_Dataset.xlsx") %>%
          log_day = log(losdays2)) %>% 
   #filter out extreme temperatures
   filter(temperature < 48, temperature > 29) %>% 
-  select(-month, -dateyear, -weekday, -month1)
+  select(-month, -dateyear, -weekday, -month1) %>% 
+  mutate(icu_flag = as.factor(icu_flag),
+         is30dayreadmit = as.factor(is30dayreadmit))
 
 #arrange the data according to the time of admission
 data = data[order(data$date),] 
@@ -34,7 +35,7 @@ data = data[order(data$date),]
 data = data[!duplicated(data$patientid),]
 data = data[!(data$is30dayreadmit == 1 & data$losdays2 > 30),]
 data = data %>%
-  select(patientid, visitid, loshours, losdays2, date, cindex, evisit, icu_flag, ageyear, gender, race, religion, maritalstatus, facilityname, insurancetype, bpsystolic, o2sat, temperature, heartrate, respirationrate, bpdiastolic, log_day) %>% 
+  select(patientid, visitid, loshours, losdays2, date, cindex, evisit, icu_flag, ageyear, gender, race, religion, maritalstatus, facilityname, insurancetype, bpsystolic, o2sat, temperature, heartrate, respirationrate, bpdiastolic, log_day, is30dayreadmit) %>% 
 #remove the observation with NAs
   na.omit()
 
@@ -42,13 +43,28 @@ data = data %>%
 #####descriptive statistics of each variable
 ##continuous variable
 sum1 <- summary(data$losdays2,digits = 3) #transformation get good results 
+sum1["Std.Dev."] <- round(sd(data$losdays2),3)
+
 sum2 <- summary(data$ageyear,digits = 3) 
+sum2["Std.Dev."] <- round(sd(data$ageyear),3)
+
 sum3 <- summary(data$bpsystolic,digits = 3) 
+sum3["Std.Dev."] <- round(sd(data$bpsystolic),3)
+
 sum4 <- summary(data$o2sat,digits = 3)
+sum4["Std.Dev."] <- round(sd(data$o2sat),3)
+
 sum5 <- summary(data$temperature, digits = 3)
+sum5["Std.Dev."] <- round(sd(data$temperature),3)
+
 sum6 <- summary(data$heartrate, digits = 3)
+sum6["Std.Dev."] <- round(sd(data$heartrate),3)
+
 sum7 <- summary(data$respirationrate, digits = 3)
+sum7["Std.Dev."] <- round(sd(data$respirationrate),3)
+
 sum8 <- summary(data$bpdiastolic, digits = 3)
+sum8["Std.Dev."] <- round(sd(data$bpdiastolic),3)
 
 knitr::kable(dplyr::bind_rows(
   c(variable = "Losdays2",sum1),#good to do log transform
@@ -134,8 +150,8 @@ table(data$facilityname)
 attach(data)
 par(mfrow=c(3,3))
 hist(losdays2) #highly skewed to the right
+hist(log_day)
 hist(ageyear)
-hist(bmi)
 hist(bpsystolic)
 hist(o2sat)
 hist(temperature)
@@ -145,7 +161,8 @@ hist(bpdiastolic)
 
 #try transformations of data
 par(mfrow=c(1,1))
-hist(log(data$losdays2)) #good to do log transform
+hist(data$losdays2) 
+```
 ```
 
 ```{r}
@@ -161,18 +178,16 @@ panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
     if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)*3
     text(0.5, 0.5, txt, cex = cex.cor * r)
 }
-# na.omit in order to have the correlation coefficients to be calculated
-data_no_na = data %>% na.omit()
+
 
 #correlation matrix
-pairs(~log(losdays2) + ageyear + bmi + bpsystolic + o2sat+ temperature +log(heartrate) +log(respirationrate)+ bpdiastolic, data=data_no_na, lower.panel = panel.smooth, upper.panel = panel.cor,main = "Correlation matrix for continuous data" )
+pairs(~log(losdays2) + ageyear + bpsystolic + o2sat+ temperature +log(heartrate) +log(respirationrate)+ bpdiastolic, data=data, lower.panel = panel.smooth, upper.panel = panel.cor,main = "Correlation matrix for continuous data" )
 
 
 
 ### try some simple linear regression
 #continuous variable
 summary(lm(log(losdays2)~ageyear,data = data))
-summary(lm(log(losdays2)~bmi,data = data))
 summary(lm(log(losdays2)~bpsystolic,data = data))
 summary(lm(log(losdays2)~o2sat,data = data))
 summary(lm(log(losdays2)~temperature,data = data))
@@ -182,7 +197,6 @@ summary(lm(log(losdays2)~bpdiastolic,data = data))
 
 
 #categorical varialbe
-summary(lm(log(losdays2)~as.factor(mews_catg),data=data))
 summary(lm(log(losdays2)~as.factor(cindex_catg),data=data))
 summary(lm(log(losdays2)~as.factor(evisit_catg),data=data))
 summary(lm(log(losdays2)~as.factor(icu_flag),data=data))
@@ -192,32 +206,6 @@ summary(lm(log(losdays2)~religion,data = data))
 summary(lm(log(losdays2)~insurance_catg, data = data))
 summary(lm(log(losdays2)~marital_catg, data = data))
 
-###try to make bmi into categorical variable
-#reference: http://apps.who.int/bmi/index.jsp?introPage=intro_3.html
-#<18.5 underweight
-#18.5-24.99 normal
-#25-29.99 pre-obese
-#>30 obese
-
-#categorizing
-
-#data$bmi_catg<-ifelse(data$bmi<18.5,"underweight",
-                #ifelse(data$bmi<25,"normal",
-                #ifelse(data$bmi<30,"pre-obese",
-                #ifelse(data$bmi>=30,"obese",NA))))
-#table(data$bmi_catg)
-#summary(lm(log(losdays2)~bmi_catg,data=data))
-###try to separate the data into icu_flag = 0 and icu_flag = 1
-#data_icu0 = data[data$icu_flag==0,]
-#data_icu1 = data[data$icu_flag==1,]
-###try to separate the data into "alone" and "not alone"
-#data_alone = data[data$marital_catg == "Alone",]
-#data_notalone = data[data$marital_catg == "Not alone",]
-
-#fit bmi again with nas omitted
-#data_bmiomit = data %>%
- # na.omit(bmi)
-#summary(lm(log(losdays2) ~ bmi_catg, data = data_bmiomit))
 
 #fit bmi again with 2 levels for BMI obese and not obese, nas not omitted
 #data$bmi_catg_2<-ifelse(data$bmi<25,"not obese", "obese")
@@ -230,10 +218,8 @@ summary(lm(log(losdays2)~marital_catg, data = data))
 
 ```{r}
 ###build the main model
-whole_model = lm(log(losdays2) ~ ageyear+mews_catg+
-                 as.factor(cindex)+as.factor(evisit)+icu_flag+
-                 gender+race_catg+insurance_catg+marital_catg+bmi_catg+facilityname,
-                 data = data)
+whole_model = lm(log_day ~ cindex_catg + evisit_catg + icu_flag + ageyear + gender + race_catg + religion + marital_catg + facilityname + insurance_catg + bpsystolic + o2sat + temperature + heartrate + respirationrate + bpdiastolic + is30dayreadmit, data = data)
+
 HH::vif(whole_model)
 #religion have very very high VIF score, then we remove it from our final model
 
@@ -241,14 +227,9 @@ HH::vif(whole_model)
 ###try automatic procedure
 #backward procedure based on AIC
 step(whole_model, direction='backward')
-summary(lm(formula = log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + 
-    as.factor(evisit) + gender + insurance_catg + marital_catg + 
-    bmi_catg + facilityname, data = data))
+
 #stepwise regression based on AIC
 step(whole_model, direction='both')
-summary(lm(log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(evisit) + 
-    gender + insurance_catg + marital_catg + bmi_catg + facilityname, data = data))
-
 
 ###criterion procedure
 
@@ -259,37 +240,17 @@ summary(lm(log(losdays2) ~ ageyear + mews_catg + as.factor(cindex) + as.factor(e
 
 
 ```{r}
-# model based on variables cody suggested
-#subset_data = data %>%
-  #select(patientid, losdays2, date, mews_catg, cindex_catg, evisit_catg, race_catg, religion, marital_catg, insurance_catg)
-
-#smaller_model = lm(log(losdays2) ~ ageyear + mews_catg + 
-                 #as.factor(cindex) + as.factor(evisit) + as.factor(icu_flag) + 
-                 #gender + race_catg + insurance_catg + marital_catg,
-                 #data = subset_data)
-#HH::vif(smaller_model) #all vifs are well under 5, no concerns of multicollinearity
-
-
-#not sure how to interpret these
-#ols_stepaic_both(smaller_model)
-
-#step(smaller_model, direction='both')
-```
-
-
-
-```{r}
 ## If we excluded the abnormal obervations
 ## temperature > 41 celsius
 
-filter_temp_bmi= data %>% 
-  filter(temperature <=41 | bmi <= 55)
+##filter_temp_bmi= data %>% 
+##filter(temperature <=41 | bmi <= 55)
 
 
-full_model_with_interaction =lm(log(losdays2) ~ is30dayreadmit + cindex + evisit + ageyear + race_catg + insurance_catg + marital_catg + 
- o2sat + temperature + heartrate + respirationrate + bpdiastolic +  is30dayreadmit:cindex + is30dayreadmit:facilityname + is30dayreadmit:o2sat + evisit:ageyear + ageyear:marital_catg + gender:heartrate + gender:bpdiastolic + facilityname:insurance_catg + facilityname:respirationrate, data = filter_temp_bmi)
+##full_model_with_interaction =lm(log(losdays2) ~ is30dayreadmit + cindex + evisit + ageyear + race_catg + insurance_catg + marital_catg + 
+## o2sat + temperature + heartrate + respirationrate + bpdiastolic +  is30dayreadmit:cindex + is30dayreadmit:facilityname + is30dayreadmit:o2sat + evisit:ageyear + ageyear:marital_catg + gender:heartrate + gender:bpdiastolic + facilityname:insurance_catg + facilityname:respirationrate, data = filter_temp_bmi)
 
 
-step(full_model_with_interaction, direction='both')
+##step(full_model_with_interaction, direction='both')
 ```
 
