@@ -147,6 +147,10 @@ hist(bpdiastolic)
 #try transformations of data
 par(mfrow=c(1,1))
 hist(log(data$losdays2)) #good to do log transform
+
+#make log outcome column
+data = data %>%
+  mutate(log_los = log(losdays2))
 ```
 
 ```{r}
