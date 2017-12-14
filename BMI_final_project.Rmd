@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
 library(dplyr)
 library(forcats)
+library(leaps)
 ```
 
 ```{r}
