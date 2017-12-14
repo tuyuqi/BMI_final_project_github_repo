@@ -239,6 +239,63 @@ step(whole_model, direction='both')
 ```
 
 
+
+```{r}
+###build the main model
+whole_model = lm(log_day ~ cindex_catg + evisit_catg + icu_flag + ageyear + gender + race_catg + religion + marital_catg +  insurance_catg + bpsystolic + o2sat + temperature + heartrate + respirationrate + bpdiastolic + is30dayreadmit + facilityname, data = data)
+
+car::vif(whole_model)
+
+
+###try automatic procedure
+#backward procedure/stepwise regression based on AIC
+step(whole_model, direction='backward')
+plot(step(whole_model, direction='both'))
+model_auto = lm(formula = log_day ~ cindex_catg + evisit_catg + ageyear + 
+    gender + race_catg + marital_catg + facilityname + insurance_catg + 
+    bpsystolic + temperature + heartrate + respirationrate + 
+    bpdiastolic + is30dayreadmit, data = data)
+summary(model_auto)
+    
+#stepwise regression/backward procedure based on p-value from SAS (threshold p-value = 0.15)
+model_sas = lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg + race_catg + facilityname, data = data)
+summary(model_sas)
+
+###criterion procedure
+best <- function(model, ...) 
+{
+  subsets <- regsubsets(formula(model), model.frame(model), ...)
+  subsets <- with(summary(subsets),
+                  cbind(p = as.numeric(rownames(which)), which, rss, rsq, adjr2, cp, bic))
+  
+  return(subsets)
+}  
+# Select the 'best' 1 models of all subsets
+round(best(model_sas, nbest = 1), 3)
+
+###model selection
+#We get the first model using automatic procedure
+model1 = lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg + race_catg + facilityname, data = data)
+summary(model1)
+#noticing the model chose from criterion procedure, we get model 2
+model2 = lm(log_day ~ ageyear+evisit_catg+bpsystolic + heartrate + is30dayreadmit + insurance_catg + cindex_catg + respirationrate +gender + marital_catg, data = data)
+summary(model2)
+
+
+#data1 = as.matrix(data)
+#library(leaps)
+#leaps(x = data1[,c(9,25,16,19,23,28,24,20,27,10)], y = data1[,22], nbest=1, method="Cp")
+# look for the cp that is closest to the number of paramters
+###model diagnostics
+par(mfrow=c(2,2))
+plot(model2)
+
+
+
+###cross validation/bootstrap
+```
+
+
 ```{r}
 ## If we excluded the abnormal obervations
 ## temperature > 41 celsius
