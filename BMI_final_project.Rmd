@@ -282,16 +282,27 @@ summary(model1)
 model2 = lm(log_day ~ ageyear+evisit_catg+bpsystolic + heartrate + is30dayreadmit + insurance_catg + cindex_catg + respirationrate +gender + marital_catg, data = data)
 summary(model2)
 
-
-#data1 = as.matrix(data)
-#library(leaps)
-#leaps(x = data1[,c(9,25,16,19,23,28,24,20,27,10)], y = data1[,22], nbest=1, method="Cp")
-# look for the cp that is closest to the number of paramters
 ###model diagnostics
 par(mfrow=c(2,2))
-plot(model2)
+plot(model1)
 
 
+#possible leverages - no positive leaverage
+#possible outliers in Y
+stu_res = rstandard(model1)
+outliers_y1 = stu_res[abs(stu_res)>2.5]
+data_drop1 = data[-c(7,41,135,140,195,220,243,289,327,338,733,748,762,1085,1104,1112,1120,1124,1137,1138,1273,1327,1438,1499,1539,1561,1564,1609,1626,1853,1996,2042,2241,2286,2304,2419,2425,2483,2634,2647,2648,2704,2736,2763,2780,2814,2894,2905,2948,2951,2976,3025,3071,3102,3138,3319,3405),]
+model_drop1 =  lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg + race_catg + facilityname, data = data_drop1)
+summary(model_drop1)
+
+
+
+stu_res = rstandard(model2)
+outliers_y2 = stu_res[abs(stu_res)>2.5]
+data_drop2 = data[-c(7,41,135,140,195,220,243,289,338,733,748,762,1085,1104,1112,1120,1137,1138,1273,1327,1438,1499,1561,1564,1609,1626,1853,1996,2042,2241,2286,2304,2419,2425,2483,2634,2647,2704,2736,2763,2780,2814,2894,2905,2948,2951,2976,3025,3071,3138,3405),]
+model_drop2 = lm(log_day ~ ageyear+evisit_catg+bpsystolic + heartrate + is30dayreadmit + insurance_catg + cindex_catg + respirationrate +gender + marital_catg, data = data_drop2)
+summary(model2)
+summary(model_drop2)
 
 ###cross validation/bootstrap
 ```
