@@ -78,16 +78,17 @@ knitr::kable(dplyr::bind_rows(
   c(variable = "bpdiastolic", sum8),
 ))
 
+
 ##categorical variable
 #MEWS: The Modified Early Warning Score (MEWS) 
-#0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
-#table(data$mews)
-#make them into 3 category and try to make the data balanced (though not perfect)
-#data$mews_catg<-ifelse(data$mews==0|data$mews==1,"normal",
-                       #ifelse(data$mews==2|data$mews==3,"increase caution",
-                       #ifelse(is.na(data$mews) == TRUE,NA,"fur deter or worse")))
-#data = data %>% mutate(mews_catg = fct_relevel(mews_catg,"increase caution"))
-#table(data$mews_catg)
+# #0-1=normal, 2-3=increase caution, 4-5=further deterioration, >5 immediate action required
+# table(data1$mews)
+# #make them into 3 category and try to make the data balanced (though not perfect)
+# data1$mews_catg<-ifelse(data1$mews==0|data1$mews==1,"normal",
+#                        ifelse(data1$mews==2|data1$mews==3,"increase caution",
+#                        ifelse(is.na(data1$mews) == TRUE,NA,"worse")))
+# data1 = data1 %>% mutate(mews_catg = fct_relevel(mews_catg,"increase caution"))
+# table(data1$mews_catg)
 #mews_catg: 1=normal; 2=increase caution; 3 = further deterioration or immediate action required
 
 #Cindex -- Charlson comorbidity index (CCI) ranks patients based on severity of comorbidity: 0=normal, 1-2=mild, 3-4=moderate and >5=severe
@@ -106,7 +107,6 @@ data$evisit_catg<-ifelse(data$evisit==0|data$evisit==1,"No or1 visit",
 data = data %>% mutate(evisit_catg = fct_relevel(evisit_catg,"No or1 visit"))
 table(data$evisit_catg)
 #evisit_catg:1=0 or 1 emergency department visit;2=more than once emergency department visit(may indicate the serious sickness)
-
 #ICU_Flag: 1=if during hospitalization, the patient had a visit in the intensive care unit (ICU); 0=otherwise. 
 table(data$icu_flag)
 #gender: patient???s gender -- balanced
@@ -128,7 +128,8 @@ data$religion[data$religion == "Mormon"] <- "Other"
 data = data %>% mutate(religion = fct_relevel(religion, "Christian"))
 table(data$religion)
 
-
+data_table = data %>% select(-patientid, -visitid)
+Hmisc::describe(data_table)
 #MaritalStatus: patient's marital status-- unbalanced
 table(data$maritalstatus)
 data$marital_catg <- ifelse(data$maritalstatus=="Civil Union"|data$maritalstatus=="Married"|data$maritalstatus=="Separated","Not alone",
@@ -169,6 +170,7 @@ hist(data$losdays2)
 ```{r}
 ## put (absolute) correlations on the upper panels,
 ## with size proportional to the correlations.
+
 panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
 {
     usr <- par("usr"); on.exit(par(usr))
@@ -182,7 +184,8 @@ panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
 
 
 #correlation matrix
-pairs(~log(losdays2) + ageyear + bpsystolic + o2sat+ temperature +log(heartrate) +log(respirationrate)+ bpdiastolic, data=data, lower.panel = panel.smooth, upper.panel = panel.cor,main = "Correlation matrix for continuous data" )
+
+pairs(~log_day + ageyear + bpsystolic + o2sat+ temperature +heartrate +respirationrate+ bpdiastolic, data=data, lower.panel = panel.smooth, upper.panel = panel.cor,main = "Correlation matrix for continuous data" )
 
 
 
@@ -274,7 +277,9 @@ stu_res = rstandard(final_model)
 outliers_y1 = stu_res[abs(stu_res)>2.5]
 data_drop1 = data[-c(8,43,139,144,199,224,247,294,346,748,763,777,1103,1112,1130,1138,1156,1157,1294,1439,1462,1523,1563,1585,1588,1634,1651,1881,2025,2073,2275,2320,2339,2456,2462,2520,2672,2685,2743,2775,2803,2820,2854,2935,2935,2946,2990,2993,3018,3068,3114,3148,3184,3456),]
 model_drop1 =  lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg, data = data_drop1)
-summary(model_drop1)
+
+summary(model_drop1) %>% 
+broom::tidy()
 ```
 
 ```{r}
@@ -303,7 +308,7 @@ bootstrap_results =
 
 ```{r}
 ## cook distance
-cooksd = cooks.distance(model1)
+cooksd = cooks.distance(final_model)
 plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")
 abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
 text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
@@ -323,5 +328,47 @@ text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T
 
 
 ##step(full_model_with_interaction, direction='both')
+```
+
+
+
+```{r}
+####################SAS code####################################################
+
+<!-- /* Generated Code (IMPORT) */ -->
+<!-- /* Source File: los_data6.csv */ -->
+<!-- /* Source Path: /folders/myfolders */ -->
+<!-- /* Code generated on: 12/13/17, 6:41 PM */ -->
+
+<!-- %web_drop_table(WORK.IMPORT); -->
+
+
+<!-- FILENAME REFFILE '/folders/myfolders/los_data6.csv'; -->
+
+<!-- FILENAME REFFILE '/folders/myfolders/los_data6.csv'; -->
+
+<!-- PROC IMPORT DATAFILE=REFFILE -->
+<!-- DBMS=CSV -->
+<!-- OUT=los_data; -->
+<!-- GETNAMES=YES; -->
+<!-- RUN; -->
+
+<!-- PROC CONTENTS DATA=los_data; RUN; -->
+
+
+<!-- %web_open_table(los_data); -->
+
+<!-- proc glmselect data=los_data plots = none; -->
+
+<!-- class is30dayreadmit cindex_catg evisit_catg race_catg marital_catg insurance_catg icu_flag gender facilityname; -->
+
+<!-- model log_day = is30dayreadmit cindex_catg evisit_catg race_catg marital_catg insurance_catg icu_flag gender facilityname ageyear gender bpsystolic o2sat temperature heartrate respirationrate bpdiastolic /selection = stepwise(select=sl sle=0.15 sls=0.15); -->
+<!-- run; -->
+
+
+<!-- #backward function -->
+<!-- model log_day = is30dayreadmit cindex_catg evisit_catg race_catg marital_catg insurance_catg icu_flag gender facilityname ageyear gender bpsystolic o2sat temperature heartrate respirationrate bpdiastolic /selection = backward(select=sl); -->
+<!-- run; -->
+
 ```
 
