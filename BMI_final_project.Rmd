@@ -221,7 +221,7 @@ summary(lm(log(losdays2)~marital_catg, data = data))
 ###build the main model
 whole_model = lm(log_day ~ cindex_catg + evisit_catg + icu_flag + ageyear + gender + race_catg + religion + marital_catg + facilityname + insurance_catg + bpsystolic + o2sat + temperature + heartrate + respirationrate + bpdiastolic + is30dayreadmit, data = data)
 
-HH::vif(whole_model)
+car::vif(whole_model)
 #religion have very very high VIF score, then we remove it from our final model
 
 
@@ -296,15 +296,51 @@ model_drop1 =  lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cin
 summary(model_drop1)
 
 
-
 stu_res = rstandard(model2)
 outliers_y2 = stu_res[abs(stu_res)>2.5]
 data_drop2 = data[-c(7,41,135,140,195,220,243,289,338,733,748,762,1085,1104,1112,1120,1137,1138,1273,1327,1438,1499,1561,1564,1609,1626,1853,1996,2042,2241,2286,2304,2419,2425,2483,2634,2647,2704,2736,2763,2780,2814,2894,2905,2948,2951,2976,3025,3071,3138,3405),]
 model_drop2 = lm(log_day ~ ageyear+evisit_catg+bpsystolic + heartrate + is30dayreadmit + insurance_catg + cindex_catg + respirationrate +gender + marital_catg, data = data_drop2)
 summary(model2)
 summary(model_drop2)
+```
 
+```{r}
 ###cross validation/bootstrap
+data = data %>% na.omit()
+final_dataset = data %>%
+  select(patientid,log_day,ageyear,evisit_catg,bpsystolic, heartrate, cindex_catg, is30dayreadmit, insurance_catg,  respirationrate, temperature, bpdiastolic, gender, marital_catg,race_catg, facilityname)
+boot_sample = function(df){
+  sample_frac(df,replace = TRUE)
+}
+boot_sample(final_dataset)
+boot_straps = data_frame(
+ strap_number = 1:1000,
+ strap_sample = purrr::rerun(1000, boot_sample(final_dataset))
+)
+boot_straps
+boot_straps %>%
+  filter(strap_number %in% 1:2) %>%
+  mutate(strap_sample = map(strap_sample), ~arrange(.x,x)))%>%
+  pull(strap_sample)
+  
+bootstrap_results = 
+  boot_straps %>%
+  mutate(models = purrr::map(strap_sample, ~lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg + race_catg + facilityname, data = data)
+  ),
+         results = purrr::map(models, broom::tidy)) %>%
+  select(-strap_sample, -models) %>%
+  tidyr::unnest() %>%
+  group_by(term) %>%
+  summarize(mean_estimate = mean(estimate))
+```
+
+
+```{r}
+## cook distance
+cooksd = cooks.distance(model1)
+plot(cooksd, pch="*", cex=2, main="Influential Obs by Cooks distance")
+abline(h = 4*mean(cooksd, na.rm=T), col="red")  # add cutoff line
+text(x=1:length(cooksd)+1, y=cooksd, labels=ifelse(cooksd>4*mean(cooksd, na.rm=T),names(cooksd),""), col="red")  # add labels
 ```
 
 
