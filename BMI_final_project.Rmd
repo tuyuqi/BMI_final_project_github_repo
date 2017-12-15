@@ -286,13 +286,13 @@ boot_sample = function(df){
 }
 boot_sample(final_dataset)
 boot_straps = data_frame(
- strap_number = 1:10,
- strap_sample = purrr::rerun(10, boot_sample(final_dataset))
+ strap_number = 1:2000,
+ strap_sample = purrr::rerun(2000, boot_sample(final_dataset))
 )
   
 bootstrap_results = 
   boot_straps %>%
-  mutate(models = purrr::map(strap_sample, ~lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg + race_catg + facilityname, data = data)
+  mutate(models = purrr::map(strap_sample, ~lm(log_day ~ ageyear + evisit_catg + bpsystolic + heartrate + cindex_catg + is30dayreadmit + insurance_catg + respirationrate + temperature + bpdiastolic + gender + marital_catg, data = data)
   ),
          results = purrr::map(models, broom::tidy)) %>%
   select(-strap_sample, -models) %>%
